@@ -76,13 +76,14 @@ async fn register(
     State(pool): State<PgPool>,
     Json(payload): Json<AuthStruct>,
 ) -> Result<Json<ResponseOk>, StatusCode> {
+    println!("password: {}",payload.password); println!("email: {}",payload.email.to_lowercase());
     let email = payload.email.to_lowercase().to_string();
     let password_hashed = hash(&payload.password, 10).map_err(|e| {
         println!("ERROR HASHING PASSWORD {}", e);
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
     let _res = sqlx::query!(
-        "INSERT INTO USERS (email, password) VALUES ($1,$2)",
+        "INSERT INTO users (email, password) VALUES ($1,$2)",
         email,
         password_hashed
     )
@@ -115,7 +116,7 @@ async fn login(
     let is_ok = verify(&payload.password, &pw_hashed).map_err(|_| StatusCode::UNAUTHORIZED)?;
     if (is_ok) {
         let user_uuid_raw = sqlx::query!(
-            "SELECT user_uuid::text as user_uuid from users WHERE email = $1",
+            "SELECT user_uuid as user_uuid from users WHERE email = $1",
             email
         )
         .fetch_one(&pool)
